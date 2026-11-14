@@ -196,7 +196,16 @@ const GX = (() => {
         const button = done ? action("Review lesson",`GX.showLesson('${esc(c.id)}','${esc(l.id)}')`,true) : unlocked ? action("Open lesson",`GX.showLesson('${esc(c.id)}','${esc(l.id)}')`) : `<button class="gx-action secondary" type="button" disabled style="opacity:.55;cursor:not-allowed">${enrolled?"Locked":"Enrol first"}</button>`;
         return `<div class="gx-course-item"><strong>Lesson ${i+1}: ${esc(l.title)}</strong><span class="gx-meta">${esc(status)}</span><span class="gx-meta">${esc(l.body.slice(0,180))}${l.body.length>180?'…':''}</span>${l.video_url?`<span class="gx-meta">Video lesson included</span>`:'<span class="gx-meta">Reading lesson</span>'}<div style="margin-top:9px">${button}</div></div>`;
       }).join("");
-      const examRows = c.exams.map((exam,i)=>`<div class="gx-course-item"><strong>Examination ${i+1}: ${esc(exam.title)}</strong><span class="gx-meta">${allLessonsDone?"Available — complete all questions":"Locked — finish every lesson first"}</span><div style="margin-top:9px">${allLessonsDone?action("Start examination",`GX.startExam('${esc(exam.id)}','${esc(c.id)}')`):`<button class="gx-action secondary" type="button" disabled style="opacity:.55;cursor:not-allowed">Locked</button>`}</div></div>`).join("");
+      const examResults = Array.isArray(p?.exams) ? p.exams : [];
+      const nextExam = c.exams.find(exam => { const result=examResults.find(item=>String(item.id)===String(exam.id)); return !result || result.score===null || result.score===undefined; });
+      const examRows = c.exams.map((exam,i)=>{
+        const result=examResults.find(item=>String(item.id)===String(exam.id));
+        const done=Boolean(result&&result.score!==null&&result.score!==undefined);
+        const available=allLessonsDone&&!done&&nextExam&&String(nextExam.id)===String(exam.id);
+        const status=done?'Submitted · '+Number(result.score)+'%':available?'Ready — next examination':allLessonsDone?'Waiting for previous examination':'Locked — finish every lesson first';
+        const button=available?action('Start examination','GX.startExam(\''+esc(exam.id)+'\',\''+esc(c.id)+'\')'): '<button class="gx-action secondary" type="button" disabled style="opacity:.55;cursor:not-allowed">'+(done?'Submitted':'Locked')+'</button>';
+        return '<div class="gx-course-item"><strong>Examination '+(i+1)+': '+esc(exam.title)+'</strong><span class="gx-meta">'+status+'</span><div style="margin-top:9px">'+button+'</div></div>';
+      }).join('');
       const enrolAction = currentUser ? (enrolled ? `<p class="gx-meta">You are enrolled in this free course.</p>${action("My progress",`GX.progress('${esc(c.id)}')`,true)}` : action("Enrol free",`GX.enrol('${esc(c.id)}')`)) : notice("Sign in or create a free account to enrol and begin learning.");
       open(`<h2 id="gxModalTitle">${esc(c.title)}</h2><p class="gx-meta">${esc(c.category)} · ${esc(c.level||"Beginner")} · ${esc(c.duration||"Self-paced")}</p><p>${esc(c.description)}</p><p><strong>Learning outcome:</strong> ${esc(c.outcome)}</p>
         ${enrolAction}
