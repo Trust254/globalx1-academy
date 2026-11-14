@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://trust254.github.io/globalx1-academy/sitemap.xml
