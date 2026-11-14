@@ -17,14 +17,14 @@
   </section>
 </div>
 
-<aside class="gx-ai-panel" id="gxAiPanel" aria-label="Global-X AI assistant" hidden>
+<aside class="gx-ai-panel" id="gxAiPanel" aria-label="Global-X Help Guide assistant" hidden>
   <div class="gx-ai-head">
     <div class="gx-ai-avatar">✦</div>
-    <div><strong>Global-X AI</strong><small>Learning assistant · Demo</small></div>
+    <div><strong>Global-X Help Guide</strong><small>Course support · Quick answers</small></div>
     <button type="button" class="gx-ai-close" onclick="GX.toggleAI(false)" aria-label="Close assistant">×</button>
   </div>
   <div class="gx-ai-messages" id="gxAiMessages">
-    <div class="gx-ai-msg bot">Hi! I'm the Global-X AI assistant. I can help you explore courses, understand how learning works, or find your way around the academy. What would you like to do?</div>
+    <div class="gx-ai-msg bot">Hi! I'm the Global-X Help Guide assistant. I can help you explore courses, understand how learning works, or find your way around the academy. What would you like to do?</div>
     <div class="gx-ai-quick">
       <button type="button" onclick="GX.askAI('Show me the available courses')">Explore courses</button>
       <button type="button" onclick="GX.askAI('How do certificates work?')">Certificate rules</button>
@@ -32,12 +32,12 @@
     </div>
   </div>
   <form class="gx-ai-input" onsubmit="GX.sendAI(event)">
-    <input id="gxAiInput" type="text" placeholder="Ask Global-X AI..." aria-label="Message Global-X AI" autocomplete="off">
+    <input id="gxAiInput" type="text" placeholder="Ask Global-X Help Guide..." aria-label="Message Global-X Help Guide" autocomplete="off">
     <button type="submit" aria-label="Send message">➤</button>
   </form>
   <small class="gx-ai-note">Academy guide · Automated answers are limited to platform information.</small>
 </aside>
-<button class="gx-ai-launcher" type="button" onclick="GX.toggleAI()" aria-label="Open Global-X AI assistant">
+<button class="gx-ai-launcher" type="button" onclick="GX.toggleAI()" aria-label="Open Global-X Help Guide assistant">
   <span class="gx-launcher-spark">✦</span><span>AI</span>
 </button>
 
@@ -211,7 +211,7 @@ const GX = (() => {
       updateNav();
       const emailMessage = result.emailNotification === "sent"
         ? (type === "register" ? " A welcome email has been sent to your registered email address." : " A sign-in notification email has been sent to your registered email address.")
-        : " Your account action succeeded, but the email notification was not sent. The academy email settings need to be checked.";
+        : " Your account action succeeded, but the notification email was not delivered. The academy sender domain must be verified with Resend before emails can reach learners.";
       open(`<h2 id="gxModalTitle">${type==="register"?"Account created successfully":"Welcome back"}</h2>${notice(`Signed in as ${currentUser.name || currentUser.email || "learner"}. You can now enrol in courses for free.${emailMessage}`)}${action("Explore courses","GX.showCourses()")} ${action("My learning","GX.myCourses()",true)}`);
     } catch(err) {
       const old=$("#gxAccountError"); if(old)old.remove();
