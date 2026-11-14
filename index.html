@@ -355,11 +355,18 @@ const GX = (() => {
       open(`<h2 id="gxModalTitle">Certificate ready</h2>${notice("Your certificate has opened in a new tab. Use Print, then Save as PDF, to download it.")}<p>Verification code: <strong>${esc(code)}</strong></p>${action("Back to my learning","GX.myCourses()")}`);
     } catch(e) { open(`<h2 id="gxModalTitle">Certificate unavailable</h2>${notice(e.message,true)}`); }
   }
-  function verifyCertificate(code) {
+  async function verifyCertificate(code) {
     const value=String(code||"").trim().toUpperCase();
     if(!value){open(`<h2 id="gxModalTitle">Certificate verification</h2>${notice("Enter the certificate code first.",true)}`);return;}
-    const url=API+"/api/certificates/verify/"+encodeURIComponent(value);
-    open(`<h2 id="gxModalTitle">Certificate verification result</h2><p>Checking code: <strong>${esc(value)}</strong></p><iframe title="Official Global-X certificate verification result" src="${url}" style="width:100%;height:470px;border:1px solid #dce5f4;border-radius:10px;background:#fff"></iframe>`);
+    open(`<h2 id="gxModalTitle">Certificate verification</h2><p>Checking official academy records for <strong>${esc(value)}</strong>…</p>`);
+    try {
+      const response=await fetch(API+"/api/certificates/verify-data/"+encodeURIComponent(value),{headers:{Accept:"application/json"}});
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok) throw new Error(data.error||"The verification service could not be reached. Please try again.");
+      open(`<div style="text-align:center"><div style="font-size:12px;letter-spacing:2px;color:#a77a20;font-weight:800">GLOBAL-X LEARNING ACADEMY</div><h2 id="gxModalTitle" style="color:#173b70">Certificate verification</h2><p style="color:#17663b;font-weight:800">✓ VERIFIED ACADEMY RECORD</p></div><div style="padding:14px 0;border-bottom:1px solid #e7edf5"><small>LEARNER</small><h3>${esc(data.studentName)}</h3></div><div style="padding:14px 0;border-bottom:1px solid #e7edf5"><small>COURSE COMPLETED</small><h3>${esc(data.courseTitle)}</h3></div><p><strong>Certificate code:</strong> ${esc(data.certificateCode)}</p><p><strong>Issue date:</strong> ${esc(data.issueDate)}</p><p><strong>Issuing location:</strong> Dubai, United Arab Emirates</p><p><strong>Professor:</strong> Sharon Jelimo Kiprop</p><p style="font-size:12px;color:#66758b">This record confirms a course-completion certificate issued by Global-X Learning Academy.</p>`);
+    } catch(error) {
+      open(`<h2 id="gxModalTitle">Verification unavailable</h2>${notice(esc(error.message),true)}<p>Please retry in a moment. If the problem continues, contact Global-X Learning Academy.</p>`);
+    }
   }
   function toggleAI(force) {
     const p=$("#gxAiPanel");p.hidden=typeof force==="boolean"?!force:!p.hidden;
