@@ -273,7 +273,7 @@ const GX = (() => {
       const body = l.body || l.content || l.description || "Study the lesson and complete the practice activity.";
       const embed = youtubeEmbedUrl(l.video_url);
       open(`<h2 id="gxModalTitle">${esc(l.title)}</h2><p class="gx-meta">${esc(c.title)}</p><div style="line-height:1.75;white-space:pre-wrap">${esc(body)}</div>
-        ${embed?`<div style="margin:14px 0"><div style="position:relative;width:100%;padding-top:56.25%;overflow:hidden;border-radius:12px;background:#111"><iframe src="${esc(embed)}" title="${esc(l.title)} training video" loading="eager" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe></div><p style="margin-top:10px"><a href="${esc(l.video_url)}" target="_blank" rel="noopener" style="display:inline-block;padding:10px 14px;border-radius:8px;background:#173d78;color:#fff;text-decoration:none">▶ If the video does not play, watch it on YouTube</a></p></div>`:notice("This lesson includes written material and practice activities.")}
+        ${embed?`<div style="margin:14px 0"><div style="position:relative;width:100%;padding-top:56.25%;overflow:hidden;border-radius:12px;background:#111"><iframe src="${esc(embed)}" title="${esc(l.title)} training video" loading="eager" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe></div></div>`:notice("This lesson includes written material and practice activities.")}
         <h3>Before you continue</h3><p>Study the material and watch the lesson video. When you are ready, mark this lesson complete to unlock the next topic.</p>
         <div style="margin-top:18px">${action("Mark lesson complete",`GX.completeLesson('${esc(courseId)}','${esc(lessonId)}')`)} ${action("Back to course",`GX.showCourse('${esc(courseId)}')`,true)}</div>`);
     } catch(e) { open(`<h2 id="gxModalTitle">Lesson locked or unavailable</h2>${notice(e.message,true)}${action("Back to course",`GX.showCourse('${esc(courseId)}')`)}`); }
@@ -290,7 +290,7 @@ const GX = (() => {
       if(!questions.length) throw new Error("This examination has no questions available yet.");
       open(`<h2 id="gxModalTitle">${esc(ex.title||"Course examination")}</h2><p>${esc(raw.instructions||"Answer every question. You need at least 80% across the course examinations to qualify.")}</p>
         <form class="gx-form" onsubmit="GX.submitExam(event,'${esc(examId)}','${esc(courseId)}')">
-        ${questions.map((q,i)=>`<fieldset style="border:1px solid #dce5f4;border-radius:12px;padding:12px;margin:12px 0"><legend><strong>${i+1}. ${esc(q.prompt)}</strong></legend>${(Array.isArray(q.options)?q.options:[]).map((o,j)=>`<label style="display:flex;gap:8px;align-items:flex-start;margin:8px 0"><input type="radio" name="q_${q.id}" value="${j}" required>${esc(o)}</label>`).join("")}</fieldset>`).join("")}
+        ${[...questions].sort(()=>Math.random()-0.5).map((q,i)=>{const mixed=(Array.isArray(q.options)?q.options:[]).map((o,j)=>({o,j})).sort(()=>Math.random()-0.5);return `<fieldset style="border:1px solid #dce5f4;border-radius:12px;padding:12px;margin:12px 0"><legend><strong>${i+1}. ${esc(q.prompt)}</strong></legend>${mixed.map(x=>`<label style="display:flex;gap:8px;align-items:flex-start;margin:8px 0"><input type="radio" name="q_${q.id}" value="${x.j}" required>${esc(x.o)}</label>`).join("")}</fieldset>`;}).join("")}
         <button class="gx-action" type="submit">Submit examination</button></form>`);
     } catch(e) { open(`<h2 id="gxModalTitle">Examination locked or unavailable</h2>${notice(e.message,true)}${action("Back to course",`GX.showCourse('${esc(courseId)}')`)}`); }
   }
@@ -342,6 +342,7 @@ const GX = (() => {
       const cert=await request(`/api/courses/${encodeURIComponent(id)}/certificate`,{method:"POST",body:"{}"});
       // The current backend returns { certificate: { certificate_code }, downloadUrl }.
       // Accept that shape as well as the older flat response formats.
+      if(cert.status==="pending_review" || cert.learnerCanDownload===false) { open(`<h2 id="gxModalTitle">Certificate review requested</h2>${notice("Your completion is awaiting professor review. Your Global-X digital certificate is free. After approval and manual sharing, it will be available to download. There is no certificate fee.")}${action("My learning","GX.myCourses()")}`); return; }
       const code=cert.verificationCode || cert.verification_code || cert.certificate_code || cert.code || cert.certificate?.verificationCode || cert.certificate?.verification_code || cert.certificate?.certificate_code || cert.certificate?.code;
       if(!code) throw new Error(cert.error || "The server did not return a certificate verification code. Please try again or contact the academy.");
       const downloadPath=cert.downloadUrl || `/api/certificates/${encodeURIComponent(code)}/download`;
