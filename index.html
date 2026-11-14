@@ -342,7 +342,7 @@ const GX = (() => {
       const cert=await request(`/api/courses/${encodeURIComponent(id)}/certificate`,{method:"POST",body:"{}"});
       // The current backend returns { certificate: { certificate_code }, downloadUrl }.
       // Accept that shape as well as the older flat response formats.
-      if(cert.status==="pending_review" || cert.learnerCanDownload===false) { open(`<h2 id="gxModalTitle">Certificate review requested</h2>${notice("Your completion is awaiting professor review. Your Global-X digital certificate is free. After approval and manual sharing, it will be available to download. There is no certificate fee.")}${action("My learning","GX.myCourses()")}`); return; }
+      if(cert.status!=="issued" || cert.learnerCanDownload===false) { throw new Error("Your certificate could not be issued yet. Please complete all lessons and pass every assessment, then try again."); }
       const code=cert.verificationCode || cert.verification_code || cert.certificate_code || cert.code || cert.certificate?.verificationCode || cert.certificate?.verification_code || cert.certificate?.certificate_code || cert.certificate?.code;
       if(!code) throw new Error(cert.error || "The server did not return a certificate verification code. Please try again or contact the academy.");
       const downloadPath=cert.downloadUrl || `/api/certificates/${encodeURIComponent(code)}/download`;
