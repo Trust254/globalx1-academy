@@ -147,7 +147,7 @@ const GX = (() => {
       <div class="gx-course-grid" id="gxCourseResults">${list.length?list.map(courseButton).join(""):notice("No courses found.")}</div>`);
   }
   function courseButton(c) {
-    return `<button class="gx-course-item" type="button" onclick="GX.showCourse('${esc(c.id)}')"><strong>${esc(c.title)}</strong><span class="gx-meta">${esc(c.category)} · ${esc(c.level)} · ${esc(c.duration)}</span><span class="gx-meta">${c.lessonCount||0} lessons · ${c.examCount||0} exams · Free</span></button>`;
+    return `<button class="gx-course-item" type="button" onclick="GX.showCourse('${esc(c.id)}')"><strong>${esc(c.title)}</strong><span class="gx-meta">${esc(c.category)} · Beginner · ${esc(c.duration||"Self-paced")}</span><span class="gx-meta">${c.lessonCount||0} lessons · ${c.examCount||0} assessments · Free enrolment</span><span class="gx-meta">${esc(c.description||"Practical, self-paced learning with structured lessons and assessments.")}</span></button>`;
   }
   function filterCourses(q) {
     const cat = $("#gxCatSelect")?.value || "All";
@@ -375,7 +375,7 @@ const GX = (() => {
   async function init(){
     modal.addEventListener("click",e=>{if(e.target===modal)closeModal();});
     document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeModal();toggleAI(false);}});
-    document.querySelectorAll(".card").forEach(card=>{card.setAttribute("role","button");card.setAttribute("tabindex","0");card.addEventListener("click",()=>{const title=card.querySelector("h3")?.innerText||"";const cat=courses.find(c=>title.toLowerCase().includes(c.category.split(" ")[0].toLowerCase()))?.category;showCourses(cat||"All");});card.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" ")card.click();});});
+    const categoryRules=[[/Hospitality/i,"Hospitality"],[/Caregiving/i,"Caregiving & Healthcare"],[/Safety/i,"Safety"],[/Information\\s+Technology/i,"IT"],[/Engineering/i,"Engineering"],[/Business/i,"Business"]];document.querySelectorAll(".card").forEach(card=>{card.setAttribute("role","button");card.setAttribute("tabindex","0");card.addEventListener("click",()=>{const title=card.querySelector("h3")?.innerText||"";const cat=categoryRules.find(([pattern])=>pattern.test(title))?.[1];showCourses(cat||"All");});card.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" ")card.click();});});
     document.querySelectorAll('a[href="#courses"]').forEach(a=>a.addEventListener("click",e=>{e.preventDefault();showCourses();}));
     document.querySelectorAll('a[href="#register"]').forEach(a=>a.addEventListener("click",e=>{e.preventDefault();account("register");}));
     document.querySelectorAll('a[href="#login"]').forEach(a=>a.addEventListener("click",e=>{e.preventDefault();account("login");}));
