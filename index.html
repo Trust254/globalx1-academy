@@ -248,7 +248,7 @@ const GX = (() => {
       ${reg?`<label>Full name<input name="name" required minlength="2" maxlength="100" placeholder="Your full name"></label>`:""}
       <label>Email address<input type="email" name="email" required placeholder="you@example.com"></label>
       <label>Password<input type="password" name="password" required minlength="8" placeholder="At least 8 characters"></label>
-      ${reg?`<label style="display:flex;align-items:flex-start;gap:9px;font-size:13px;line-height:1.45;color:#53627a"><input type="checkbox" name="privacyAcknowledged" required style="margin-top:3px;flex:0 0 auto"> I have read the <a href="privacy-policy.html" target="_blank" rel="noopener">Global-X Privacy Policy</a>.</label>`:""}
+      ${reg?`<label style="display:flex;align-items:flex-start;gap:9px;font-size:13px;line-height:1.45;color:#53627a"><input type="checkbox" name="privacyAcknowledged" required style="margin-top:3px;flex:0 0 auto"> I have read the <a href="privacy-policy.html" target="_blank" rel="noopener">Global-X Privacy Policy</a>.</label><label style="display:flex;align-items:flex-start;gap:9px;font-size:13px;line-height:1.45;color:#53627a"><input type="checkbox" name="termsAcknowledged" required style="margin-top:3px;flex:0 0 auto"> I agree to the <a href="terms-and-conditions.html" target="_blank" rel="noopener">Global-X Terms &amp; Conditions</a>.</label>`:""}
       <button class="gx-action" type="submit">${reg?"Create free account":"Sign in"}</button></form>
       <p class="gx-meta">Registration and learning are free. Use an email address you can access.</p>
       ${action(reg?"Already registered? Sign in":"New learner? Create account",`GX.account('${reg?"login":"register"}')`,true)}`);
