@@ -1,0 +1,18 @@
+{
+  "name": "Global-X Learning Academy",
+  "short_name": "Global-X Academy",
+  "description": "Learn, grow and earn free certificates with Global-X Learning Academy.",
+  "start_url": "/globalx1-academy/",
+  "scope": "/globalx1-academy/",
+  "display": "standalone",
+  "background_color": "#092b67",
+  "theme_color": "#064bd5",
+  "icons": [
+    {
+      "src": "assets/globalx-app-icon.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}

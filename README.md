@@ -1,1 +1,0 @@
-# globalx1-academy
