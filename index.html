@@ -275,25 +275,45 @@ const GX = (() => {
     }
   }
 
+  let gxLessonTimer=null, gxLessonInterval=null, gxAutoAdvanceBusy=false;
+  function clearLessonAutoAdvance(){if(gxLessonTimer)clearTimeout(gxLessonTimer);if(gxLessonInterval)clearInterval(gxLessonInterval);gxLessonTimer=null;gxLessonInterval=null;gxAutoAdvanceBusy=false;}
+  function loadGXYouTubeApi(){if(window.YT&&window.YT.Player)return;if(!document.querySelector('script[data-gx-youtube-api]')){const script=document.createElement('script');script.src='https://www.youtube.com/iframe_api';script.async=true;script.dataset.gxYoutubeApi='1';document.head.appendChild(script);}}
   async function showLesson(courseId, lessonId) {
     try {
-      // The protected lesson endpoint enforces lesson order on the server.
-      const lessonResponse = await request(`/api/lessons/${encodeURIComponent(lessonId)}`);
-      const raw = await request(`/api/courses/${encodeURIComponent(courseId)}`);
-      const c = normalizeCourseResponse(raw);
-      const l = c.lessons.find(x=>String(x.id)===String(lessonId)) || lessonResponse.lesson;
-      if(!l) throw new Error("Lesson not found.");
-      const body = l.body || l.content || l.description || "Study the lesson and complete the practice activity.";
-      const embed = youtubeEmbedUrl(l.video_url);
-      open(`<h2 id="gxModalTitle">${esc(l.title)}</h2><p class="gx-meta">${esc(c.title)}</p><div style="line-height:1.75;white-space:pre-wrap">${esc(body)}</div>
-        ${embed?`<div style="margin:14px 0"><div style="position:relative;width:100%;padding-top:56.25%;overflow:hidden;border-radius:12px;background:#111"><iframe src="${esc(embed)}" title="${esc(l.title)} training video" loading="eager" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe></div></div>`:notice("This lesson includes written material and practice activities.")}
-        <h3>Before you continue</h3><p>Study the material and watch the lesson video. When you are ready, mark this lesson complete to unlock the next topic.</p>
-        <div style="margin-top:18px">${action("Mark lesson complete",`GX.completeLesson('${esc(courseId)}','${esc(lessonId)}')`)} ${action("Back to course",`GX.showCourse('${esc(courseId)}')`,true)}</div>`);
-    } catch(e) { open(`<h2 id="gxModalTitle">Lesson locked or unavailable</h2>${notice(e.message,true)}${action("Back to course",`GX.showCourse('${esc(courseId)}')`)}`); }
+      clearLessonAutoAdvance();
+      const lessonResponse=await request('/api/lessons/'+encodeURIComponent(lessonId));
+      const raw=await request('/api/courses/'+encodeURIComponent(courseId));
+      const c=normalizeCourseResponse(raw);
+      const l=c.lessons.find(x=>String(x.id)===String(lessonId))||lessonResponse.lesson;
+      if(!l)throw new Error('Lesson not found.');
+      const index=c.lessons.findIndex(x=>String(x.id)===String(lessonId));
+      const body=l.body||l.content||l.description||'Study the lesson and complete the practice activity.';
+      const embed=youtubeEmbedUrl(l.video_url);
+      const seconds=Math.max(30,Math.min(300,Math.ceil(String(body).trim().split(/\\s+/).length/3)));
+      open('<div class="gx-v2-learning-head"><span class="gx-v2-eyebrow">GLOBAL-X ACADEMY · V2 LEARNING</span><span class="gx-v2-lesson-count">LESSON '+(index+1)+' OF '+c.lessons.length+'</span></div><h2 id="gxModalTitle">'+esc(l.title)+'</h2><p class="gx-meta">'+esc(c.title)+'</p><div class="gx-v2-lesson-progress"><span style="width:'+Math.round((index+1)/Math.max(1,c.lessons.length)*100)+'%"></span></div>'+(embed?'<div style="margin:14px 0"><div style="position:relative;width:100%;padding-top:56.25%;overflow:hidden;border-radius:15px;background:#111"><iframe id="gxLessonVideo" src="'+esc(embed)+(embed.includes('?')?'&':'?')+'enablejsapi=1" title="'+esc(l.title)+' training video" loading="eager" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe></div></div>':'<div class="gx-v2-auto-next" id="gxAutoNextStatus">Next lesson opens automatically after the reading period.</div>')+'<div class="gx-v2-lesson-body">'+esc(body)+'</div><div class="gx-v2-auto-next" id="gxAutoNextStatus2">'+(embed?'Your next lesson opens automatically when this video finishes.':'Preparing your automatic next lesson…')+'</div><div class="gx-v2-learning-actions">'+action('Continue now','GX.completeLesson(\''+esc(courseId)+'\',\''+esc(lessonId)+'\')')+' '+action('Back to course','GX.showCourse(\''+esc(courseId)+'\')',true)+'</div>');
+      if(embed){
+        loadGXYouTubeApi();
+        const attach=function(){const frame=document.getElementById('gxLessonVideo');if(!frame||!window.YT||!window.YT.Player)return;try{new YT.Player(frame,{events:{onStateChange:function(event){if(event.data===YT.PlayerState.ENDED)completeLesson(courseId,lessonId);}}});}catch(_){}};
+        if(window.YT&&window.YT.Player)attach();else{const prior=window.onYouTubeIframeAPIReady;window.onYouTubeIframeAPIReady=function(){if(typeof prior==='function')prior();attach();};}
+      }else{
+        let remaining=seconds;const status=document.getElementById('gxAutoNextStatus2');
+        const update=function(){if(status)status.textContent='Next lesson opens automatically in '+remaining+' seconds.';};update();
+        gxLessonInterval=setInterval(function(){remaining--;update();},1000);
+        gxLessonTimer=setTimeout(function(){completeLesson(courseId,lessonId);},seconds*1000);
+      }
+    }catch(e){clearLessonAutoAdvance();open('<h2 id="gxModalTitle">Lesson locked or unavailable</h2>'+notice(e.message,true)+action('Back to course','GX.showCourse(\''+esc(courseId)+'\')'));}
   }
   async function completeLesson(courseId,lessonId) {
-    try { const r=await request(`/api/lessons/${encodeURIComponent(lessonId)}/complete`,{method:"POST",body:"{}"}); const p=r.progress||{}; open(`<h2 id="gxModalTitle">Lesson completed</h2>${notice(r.message||"Lesson marked complete.")}<p>Lessons completed: ${Number(p.lessonsCompleted||0)} of ${Number(p.lessonCount||p.lessonsTotal||0)}</p>${action("Continue to next step",`GX.showCourse('${esc(courseId)}')`)}`); }
-    catch(e) { open(`<h2 id="gxModalTitle">Cannot complete lesson</h2>${notice(e.message,true)}${action("Back to course",`GX.showCourse('${esc(courseId)}')`)}`); }
+    if(gxAutoAdvanceBusy)return;gxAutoAdvanceBusy=true;
+    if(gxLessonTimer)clearTimeout(gxLessonTimer);if(gxLessonInterval)clearInterval(gxLessonInterval);
+    try{
+      const result=await request('/api/lessons/'+encodeURIComponent(lessonId)+'/complete',{method:'POST',body:'{}'});
+      const raw=await request('/api/courses/'+encodeURIComponent(courseId));const c=normalizeCourseResponse(raw);
+      const index=c.lessons.findIndex(x=>String(x.id)===String(lessonId));const next=c.lessons[index+1];
+      if(next){await showLesson(courseId,next.id);const status=document.getElementById('gxAutoNextStatus2');if(status)status.textContent='Previous lesson saved. Moving to your next lesson.';}
+      else{clearLessonAutoAdvance();await showCourse(courseId);const target=document.getElementById('gxModalContent');if(target){const banner=document.createElement('div');banner.className='gx-v2-auto-next';banner.textContent='All lessons completed. Your examinations are now unlocked.';target.prepend(banner);}}
+    }catch(e){clearLessonAutoAdvance();open('<h2 id="gxModalTitle">Could not save lesson</h2>'+notice(e.message,true)+action('Retry lesson completion','GX.completeLesson(\''+esc(courseId)+'\',\''+esc(lessonId)+'\')'));}
+    finally{gxAutoAdvanceBusy=false;}
   }
   function shuffleItems(items) {
     const mixed=[...items];
