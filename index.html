@@ -343,7 +343,7 @@ const GX = (() => {
       // The current backend returns { certificate: { certificate_code }, downloadUrl }.
       // Accept that shape as well as the older flat response formats.
       if(cert.status!=="issued" || cert.learnerCanDownload===false) { throw new Error("Your certificate could not be issued yet. Please complete all lessons and pass every assessment, then try again."); }
-      const code=cert.verificationCode || cert.verification_code || cert.certificate_code || cert.code || cert.certificate?.verificationCode || cert.certificate?.verification_code || cert.certificate?.certificate_code || cert.certificate?.code;
+      const code=cert.certificateCode || cert.verificationCode || cert.verification_code || cert.certificate_code || cert.code || cert.certificate?.certificateCode || cert.certificate?.verificationCode || cert.certificate?.verification_code || cert.certificate?.certificate_code || cert.certificate?.code;
       if(!code) throw new Error(cert.error || "The server did not return a certificate verification code. Please try again or contact the academy.");
       const downloadPath=cert.downloadUrl || `/api/certificates/${encodeURIComponent(code)}/download`;
       const downloadUrl=/^https?:\/\//i.test(downloadPath) ? downloadPath : API + (downloadPath.startsWith("/") ? downloadPath : `/${downloadPath}`);
