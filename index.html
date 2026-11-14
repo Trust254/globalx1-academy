@@ -334,13 +334,19 @@ const GX = (() => {
     } catch(e) { open(`<h2 id="gxModalTitle">Examination locked or unavailable</h2>${notice(e.message,true)}${action("Back to course",`GX.showCourse('${esc(courseId)}')`)}`); }
   }
   async function submitExam(e,examId,courseId) {
-    e.preventDefault(); const form=e.currentTarget;
-    const answers=Object.fromEntries([...new FormData(form).entries()].map(([key,val])=>[key.replace("q_",""),Number(val)]));
-    try {
-      const r=await request(`/api/exams/${encodeURIComponent(examId)}/submit`,{method:"POST",body:JSON.stringify({answers})});
-      const review=Array.isArray(r.review)?r.review:[];
-      open(`<h2 id="gxModalTitle">Examination result</h2><p><strong>Score: ${Number(r.score||0)}%</strong> (${Number(r.correct||0)} of ${Number(r.total||0)} correct)</p>${notice(r.message||"Your examination has been submitted.")}${review.length?`<h3>Answer review</h3><ol>${review.map(x=>`<li>${x.correct?"Correct":"Review"} — ${esc(x.explanation||x.question||"")}</li>`).join("")}</ol>`:""}${action("View course progress",`GX.progress('${esc(courseId)}')`)}`);
-    } catch(err) { open(`<h2 id="gxModalTitle">Submission failed</h2>${notice(err.message,true)}${action("Back to course",`GX.showCourse('${esc(courseId)}')`)}`); }
+    e.preventDefault();const form=e.currentTarget;
+    const answers=Object.fromEntries([...new FormData(form).entries()].map(([key,val])=>[key.replace('q_',''),Number(val)]));
+    const submit=form.querySelector('[type=submit]');if(submit){submit.disabled=true;submit.textContent='Submitting…';}
+    try{
+      const r=await request('/api/exams/'+encodeURIComponent(examId)+'/submit',{method:'POST',body:JSON.stringify({answers})});
+      const raw=await request('/api/courses/'+encodeURIComponent(courseId));const c=normalizeCourseResponse(raw);
+      const p=r.progress||{};const results=Array.isArray(p.exams)?p.exams:[];
+      const next=c.exams.find(function(ex){const found=results.find(function(item){return String(item.id)===String(ex.id);});return !found||found.score===null||found.score===undefined;});
+      if(next){await startExam(next.id,courseId);const target=document.getElementById('gxModalContent');if(target){const banner=document.createElement('div');banner.className='gx-v2-auto-next';banner.textContent='Previous examination submitted · '+Number(r.score||0)+'%. Your next examination is ready.';target.prepend(banner);}}
+      else{
+        open('<div class="gx-v2-learning-head"><span class="gx-v2-eyebrow">GLOBAL-X ACADEMY · V2 ASSESSMENT</span><span class="gx-v2-lesson-count">ALL EXAMS SUBMITTED</span></div><h2 id="gxModalTitle">Examination completed</h2><p><strong>Latest score: '+Number(r.score||0)+'%</strong> ('+Number(r.correct||0)+' of '+Number(r.total||0)+' correct)</p>'+notice(r.message||'Your examination has been submitted.')+action('View course progress','GX.progress(\''+esc(courseId)+'\')'));
+      }
+    }catch(err){open('<h2 id="gxModalTitle">Submission failed</h2>'+notice(err.message,true)+action('Return to examination','GX.startExam(\''+esc(examId)+'\',\''+esc(courseId)+'\')'));}
   }
   async function progress(id) {
     try {
