@@ -282,6 +282,12 @@ const GX = (() => {
     try { const r=await request(`/api/lessons/${encodeURIComponent(lessonId)}/complete`,{method:"POST",body:"{}"}); const p=r.progress||{}; open(`<h2 id="gxModalTitle">Lesson completed</h2>${notice(r.message||"Lesson marked complete.")}<p>Lessons completed: ${Number(p.lessonsCompleted||0)} of ${Number(p.lessonCount||p.lessonsTotal||0)}</p>${action("Continue to next step",`GX.showCourse('${esc(courseId)}')`)}`); }
     catch(e) { open(`<h2 id="gxModalTitle">Cannot complete lesson</h2>${notice(e.message,true)}${action("Back to course",`GX.showCourse('${esc(courseId)}')`)}`); }
   }
+  function shuffleItems(items) {
+    const mixed=[...items];
+    for(let i=mixed.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[mixed[i],mixed[j]]=[mixed[j],mixed[i]];}
+    return mixed;
+  }
+
   async function startExam(examId,courseId) {
     try {
       const raw=await request(`/api/exams/${encodeURIComponent(examId)}`);
@@ -290,7 +296,7 @@ const GX = (() => {
       if(!questions.length) throw new Error("This examination has no questions available yet.");
       open(`<h2 id="gxModalTitle">${esc(ex.title||"Course examination")}</h2><p>${esc(raw.instructions||"Answer every question. You need at least 80% across the course examinations to qualify.")}</p>
         <form class="gx-form" onsubmit="GX.submitExam(event,'${esc(examId)}','${esc(courseId)}')">
-        ${[...questions].sort(()=>Math.random()-0.5).map((q,i)=>{const mixed=(Array.isArray(q.options)?q.options:[]).map((o,j)=>({o,j})).sort(()=>Math.random()-0.5);return `<fieldset style="border:1px solid #dce5f4;border-radius:12px;padding:12px;margin:12px 0"><legend><strong>${i+1}. ${esc(q.prompt)}</strong></legend>${mixed.map(x=>`<label style="display:flex;gap:8px;align-items:flex-start;margin:8px 0"><input type="radio" name="q_${q.id}" value="${x.j}" required>${esc(x.o)}</label>`).join("")}</fieldset>`;}).join("")}
+        ${shuffleItems(questions).map((q,i)=>{const mixed=shuffleItems((Array.isArray(q.options)?q.options:[]).map((o,j)=>({o,j})));return `<fieldset style="border:1px solid #dce5f4;border-radius:12px;padding:12px;margin:12px 0"><legend><strong>${i+1}. ${esc(q.prompt)}</strong></legend>${mixed.map(x=>`<label style="display:flex;gap:8px;align-items:flex-start;margin:8px 0"><input type="radio" name="q_${q.id}" value="${x.j}" required>${esc(x.o)}</label>`).join("")}</fieldset>`;}).join("")}
         <button class="gx-action" type="submit">Submit examination</button></form>`);
     } catch(e) { open(`<h2 id="gxModalTitle">Examination locked or unavailable</h2>${notice(e.message,true)}${action("Back to course",`GX.showCourse('${esc(courseId)}')`)}`); }
   }
